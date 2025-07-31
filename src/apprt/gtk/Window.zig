@@ -395,15 +395,12 @@ pub fn init(self: *Window, app: *App) !void {
 
     self.tab_bar = adw.TabBar.new();
     self.tab_bar.setView(self.notebook.tab_view);
+    // 将 tab_bar 插入 headerbar，实现 title+tab 一行
+    self.headerbar.packStart(self.tab_bar.as(gtk.Widget));
 
     if (adw_version.supportsToolbarView()) {
         const toolbar_view = adw.ToolbarView.new();
         toolbar_view.addTopBar(self.headerbar.asWidget());
-
-        switch (self.config.gtk_tabs_location) {
-            .top => toolbar_view.addTopBar(self.tab_bar.as(gtk.Widget)),
-            .bottom => toolbar_view.addBottomBar(self.tab_bar.as(gtk.Widget)),
-        }
         toolbar_view.setContent(box.as(gtk.Widget));
 
         const toolbar_style: adw.ToolbarStyle = switch (self.config.gtk_toolbar_style) {
@@ -418,17 +415,9 @@ pub fn init(self: *Window, app: *App) !void {
         self.tab_overview.?.setChild(toolbar_view.as(gtk.Widget));
         self.window.setContent(self.tab_overview.?.as(gtk.Widget));
     } else {
-        // In earlier adwaita versions, we need to add the tabbar manually since we do not use
-        // an AdwToolbarView.
+        // In earlier adwaita versions,我们只插入headerbar
         self.tab_bar.as(gtk.Widget).addCssClass("inline");
-
-        switch (self.config.gtk_tabs_location) {
-            .top => box.insertChildAfter(
-                self.tab_bar.as(gtk.Widget),
-                self.headerbar.asWidget(),
-            ),
-            .bottom => box.append(self.tab_bar.as(gtk.Widget)),
-        }
+        box.insertChildAfter(self.headerbar.asWidget(), null);
     }
 
     // If we want the window to be maximized, we do that here.
